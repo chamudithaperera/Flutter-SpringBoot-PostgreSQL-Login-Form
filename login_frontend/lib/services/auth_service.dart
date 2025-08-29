@@ -83,9 +83,8 @@ class AuthService {
   static Future<bool> logout(String refreshToken) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/logout'),
+        Uri.parse('$baseUrl/logout?refreshToken=$refreshToken'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'refreshToken': refreshToken}),
       );
 
       return response.statusCode == 200;

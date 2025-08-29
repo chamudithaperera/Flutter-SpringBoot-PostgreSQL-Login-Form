@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:login_frontend/services/auth_service.dart';
+import 'package:login_frontend/models/user_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -9,7 +10,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  Map<String, dynamic>? _userData;
+  UserModel? _userData;
   String? _accessToken;
   String? _refreshToken;
   bool _isLoading = false;
@@ -28,9 +29,9 @@ class _HomeScreenState extends State<HomeScreen> {
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     if (args != null) {
       setState(() {
-        _userData = args['userData'];
-        _accessToken = args['accessToken'];
-        _refreshToken = args['refreshToken'];
+        _userData = args['userData'] as UserModel;
+        _accessToken = args['accessToken'] as String;
+        _refreshToken = args['refreshToken'] as String;
       });
     }
   }
@@ -126,11 +127,11 @@ class _HomeScreenState extends State<HomeScreen> {
             if (_userData != null) ...[
               _buildSectionTitle('User Information'),
               const SizedBox(height: 16),
-              _buildInfoCard('Full Name', _userData!['fullName']),
+              _buildInfoCard('Full Name', _userData!.fullName),
               const SizedBox(height: 12),
-              _buildInfoCard('Email', _userData!['email']),
+              _buildInfoCard('Email', _userData!.email),
               const SizedBox(height: 12),
-              _buildInfoCard('User ID', _userData!['id'].toString()),
+              _buildInfoCard('User ID', _userData!.id),
               const SizedBox(height: 32),
             ] else ...[
               _buildSectionTitle('User Information'),
@@ -138,6 +139,16 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildInfoCard('Status', 'No user data available'),
               const SizedBox(height: 12),
               _buildInfoCard('Note', 'Please login or register first'),
+              const SizedBox(height: 32),
+            ],
+
+            // JWT Tokens Section
+            if (_accessToken != null && _refreshToken != null) ...[
+              _buildSectionTitle('JWT Tokens'),
+              const SizedBox(height: 16),
+              _buildTokenCard('Access Token', _accessToken!),
+              const SizedBox(height: 16),
+              _buildTokenCard('Refresh Token', _refreshToken!),
               const SizedBox(height: 32),
             ],
 
@@ -210,6 +221,56 @@ class _HomeScreenState extends State<HomeScreen> {
           Text(
             value,
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTokenCard(String label, String token) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey[200]!,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey[200]!),
+            ),
+            child: SelectableText(
+              token,
+              style: TextStyle(
+                fontSize: 12,
+                fontFamily: 'monospace',
+                color: Colors.grey[700],
+              ),
+            ),
           ),
         ],
       ),
