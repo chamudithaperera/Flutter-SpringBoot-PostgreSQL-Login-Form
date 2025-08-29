@@ -17,11 +17,19 @@ class MyApp extends StatelessWidget {
       title: 'Login App',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      initialRoute: '/home',
+      initialRoute: '/login',
+      onGenerateRoute: (settings) {
+        if (settings.name == '/home') {
+          return MaterialPageRoute(
+            builder: (context) => const HomeScreen(),
+            settings: settings,
+          );
+        }
+        return null;
+      },
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
-        '/home': (context) => const HomeScreen(),
       },
     );
   }

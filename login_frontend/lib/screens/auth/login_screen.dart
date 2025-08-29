@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:login_frontend/widgets/custom_text_field.dart';
 import 'package:login_frontend/widgets/custom_button.dart';
+import 'package:login_frontend/services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -37,11 +38,45 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      // TODO: Implement actual login logic with your Spring Boot backend
-      await Future.delayed(const Duration(seconds: 2)); // Simulate API call
+      final result = await AuthService.login(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
 
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
+        if (result['success']) {
+          // Store user data and tokens (in a real app, use secure storage)
+          // For now, we'll pass them to the home screen
+          final userData = result['user'];
+          final accessToken = result['accessToken'];
+          final refreshToken = result['refreshToken'];
+
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Welcome back, ${userData.fullName}!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // Navigate to home screen with user data
+          Navigator.pushReplacementNamed(
+            context,
+            '/home',
+            arguments: {
+              'userData': userData,
+              'accessToken': accessToken,
+              'refreshToken': refreshToken,
+            },
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Login failed'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:login_frontend/widgets/custom_text_field.dart';
 import 'package:login_frontend/widgets/custom_button.dart';
+import 'package:login_frontend/services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -48,17 +49,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
-      // TODO: Implement actual registration logic with your Spring Boot backend
-      await Future.delayed(const Duration(seconds: 2)); // Simulate API call
+      final result = await AuthService.register(
+        _fullNameController.text.trim(),
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Registration successful! Please sign in.'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pop(context); // Go back to login
+        if (result['success']) {
+          // Store user data and tokens (in a real app, use secure storage)
+          // For now, we'll pass them to the home screen
+          final userData = result['user'];
+          final accessToken = result['accessToken'];
+          final refreshToken = result['refreshToken'];
+
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Welcome, ${userData.fullName}!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // Navigate to home screen with user data
+          Navigator.pushReplacementNamed(
+            context,
+            '/home',
+            arguments: {
+              'userData': userData,
+              'accessToken': accessToken,
+              'refreshToken': refreshToken,
+            },
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Registration failed'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

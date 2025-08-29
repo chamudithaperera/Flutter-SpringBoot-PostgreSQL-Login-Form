@@ -4,19 +4,17 @@ import 'package:login_frontend/models/user_model.dart';
 
 class AuthService {
   static const String baseUrl = 'http://localhost:8080/api/auth';
-  
+
   // Login user
-  static Future<Map<String, dynamic>> login(String email, String password) async {
+  static Future<Map<String, dynamic>> login(
+    String email,
+    String password,
+  ) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/login'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: json.encode({
-          'email': email,
-          'password': password,
-        }),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'email': email, 'password': password}),
       );
 
       if (response.statusCode == 200) {
@@ -24,7 +22,10 @@ class AuthService {
         return {
           'success': true,
           'user': UserModel.fromJson(data['user']),
-          'token': data['token'],
+          'accessToken': data['accessToken'],
+          'refreshToken': data['refreshToken'],
+          'tokenType': data['tokenType'],
+          'expiresIn': data['expiresIn'],
         };
       } else {
         final error = json.decode(response.body);
@@ -34,10 +35,7 @@ class AuthService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 
@@ -50,9 +48,7 @@ class AuthService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/register'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'fullName': fullName,
           'email': email,
@@ -65,6 +61,10 @@ class AuthService {
         return {
           'success': true,
           'user': UserModel.fromJson(data['user']),
+          'accessToken': data['accessToken'],
+          'refreshToken': data['refreshToken'],
+          'tokenType': data['tokenType'],
+          'expiresIn': data['expiresIn'],
           'message': 'Registration successful',
         };
       } else {
@@ -75,22 +75,17 @@ class AuthService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 
   // Logout user
-  static Future<bool> logout(String token) async {
+  static Future<bool> logout(String refreshToken) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/logout'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'refreshToken': refreshToken}),
       );
 
       return response.statusCode == 200;
@@ -103,7 +98,7 @@ class AuthService {
   static Future<Map<String, dynamic>> getProfile(String token) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/profile'),
+        Uri.parse('$baseUrl/../user/profile'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -112,21 +107,41 @@ class AuthService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        return {'success': true, 'user': UserModel.fromJson(data)};
+      } else {
+        return {'success': false, 'message': 'Failed to get profile'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+    }
+  }
+
+  // Refresh access token
+  static Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/refresh?refreshToken=$refreshToken'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
         return {
           'success': true,
-          'user': UserModel.fromJson(data['user']),
+          'accessToken': data['accessToken'],
+          'refreshToken': data['refreshToken'],
+          'tokenType': data['tokenType'],
+          'expiresIn': data['expiresIn'],
         };
       } else {
+        final error = json.decode(response.body);
         return {
           'success': false,
-          'message': 'Failed to get profile',
+          'message': error['message'] ?? 'Token refresh failed',
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Network error: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
 }
