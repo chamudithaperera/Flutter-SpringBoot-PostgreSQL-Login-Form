@@ -2,14 +2,17 @@ package com.login.backend.service;
 
 import com.login.backend.dto.RegisterRequest;
 import com.login.backend.entity.User;
+import com.login.backend.exception.UserAlreadyExistsException;
 import com.login.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
 @Service
+@Transactional
 public class UserService {
 
     @Autowired
@@ -22,22 +25,28 @@ public class UserService {
      * Register a new user
      * @param request registration request
      * @return registered user
-     * @throws RuntimeException if email already exists
+     * @throws UserAlreadyExistsException if email already exists
      */
     public User registerUser(RegisterRequest request) {
-        // Check if user already exists
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("User with email " + request.getEmail() + " already exists");
+        try {
+            // Check if user already exists
+            if (userRepository.existsByEmail(request.getEmail())) {
+                throw new UserAlreadyExistsException("User with email " + request.getEmail() + " already exists");
+            }
+
+            // Create new user
+            User user = new User();
+            user.setFullName(request.getFullName());
+            user.setEmail(request.getEmail());
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+            user.setIsActive(true);
+
+            return userRepository.save(user);
+        } catch (Exception e) {
+            // Log the error for debugging
+            System.err.println("Error registering user: " + e.getMessage());
+            throw e;
         }
-
-        // Create new user
-        User user = new User();
-        user.setFullName(request.getFullName());
-        user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setIsActive(true);
-
-        return userRepository.save(user);
     }
 
     /**

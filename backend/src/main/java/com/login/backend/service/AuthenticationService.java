@@ -11,8 +11,10 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional
 public class AuthenticationService {
 
     @Autowired
@@ -57,25 +59,32 @@ public class AuthenticationService {
      * @return authentication response with tokens
      */
     public AuthResponse login(LoginRequest request) {
-        // Authenticate user
-        Authentication authentication = authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-        );
-        
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        User user = userService.findByEmail(userDetails.getUsername())
-            .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        // Generate tokens
-        String accessToken = jwtService.generateAccessToken(userDetails);
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
-        
-        return new AuthResponse(
-            accessToken,
-            refreshToken.getToken(),
-            jwtService.getAccessTokenExpiration(),
-            user
-        );
+        try {
+            // Authenticate user
+            Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+            );
+            
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            User user = userService.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            // Generate tokens
+            String accessToken = jwtService.generateAccessToken(userDetails);
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+            
+            return new AuthResponse(
+                accessToken,
+                refreshToken.getToken(),
+                jwtService.getAccessTokenExpiration(),
+                user
+            );
+        } catch (Exception e) {
+            // Log the error for debugging
+            System.err.println("Login error: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     /**

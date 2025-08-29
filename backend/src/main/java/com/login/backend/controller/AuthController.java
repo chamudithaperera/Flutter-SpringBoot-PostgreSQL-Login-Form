@@ -3,6 +3,7 @@ package com.login.backend.controller;
 import com.login.backend.dto.AuthResponse;
 import com.login.backend.dto.LoginRequest;
 import com.login.backend.dto.RegisterRequest;
+import com.login.backend.exception.UserAlreadyExistsException;
 import com.login.backend.service.AuthenticationService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,9 +32,15 @@ public class AuthController {
         try {
             AuthResponse response = authenticationService.register(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (Exception e) {
+        } catch (UserAlreadyExistsException e) {
             Map<String, String> error = new HashMap<>();
             error.put("message", e.getMessage());
+            error.put("error", "USER_ALREADY_EXISTS");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("message", "Registration failed: " + e.getMessage());
+            error.put("error", "REGISTRATION_ERROR");
             return ResponseEntity.badRequest().body(error);
         }
     }
@@ -50,7 +57,8 @@ public class AuthController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
-            error.put("message", e.getMessage());
+            error.put("message", "Login failed: " + e.getMessage());
+            error.put("error", "LOGIN_ERROR");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
         }
     }
@@ -67,7 +75,8 @@ public class AuthController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
-            error.put("message", e.getMessage());
+            error.put("message", "Token refresh failed: " + e.getMessage());
+            error.put("error", "REFRESH_ERROR");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
         }
     }
@@ -86,7 +95,8 @@ public class AuthController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
-            error.put("message", e.getMessage());
+            error.put("message", "Logout failed: " + e.getMessage());
+            error.put("error", "LOGOUT_ERROR");
             return ResponseEntity.badRequest().body(error);
         }
     }
@@ -100,6 +110,7 @@ public class AuthController {
         Map<String, String> response = new HashMap<>();
         response.put("status", "UP");
         response.put("message", "Authentication service is running");
+        response.put("timestamp", java.time.LocalDateTime.now().toString());
         return ResponseEntity.ok(response);
     }
 }
